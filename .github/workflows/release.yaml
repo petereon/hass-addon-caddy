@@ -1,0 +1,136 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  get-version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
+      tag: ${{ steps.semver.outputs.version_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Determine Version
+        id: semver
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "v"
+          major_pattern: "(BREAKING|major)"
+          minor_pattern: "(feat)"
+          version_format: "${major}.${minor}.${patch}"
+
+  build-binaries:
+    name: Build Binary ${{ matrix.ha_arch }}
+    runs-on: ubuntu-latest
+    container:
+        image: ${{ matrix.image }}
+    strategy:
+      matrix:
+        include:
+          - ha_arch: aarch64
+            image: homeassistant/aarch64-base:3.19
+            goos: linux
+            goarch: arm64
+            goarm: ''
+          - ha_arch: amd64
+            image: homeassistant/amd64-base:3.19
+            goos: linux
+            goarch: amd64
+            goarm: ''
+          - ha_arch: armhf
+            goos: linux
+            goarch: arm
+            goarm: '6'
+            image: homeassistant/armhf-base:3.19
+          - ha_arch: armv7
+            goos: linux
+            goarch: arm
+            goarm: '7'
+            image: homeassistant/armv7-base:3.19
+          - ha_arch: i386
+            goos: linux
+            goarch: 386
+            goarm: ''
+            image: homeassistant/i386-base:3.19
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install xcaddy
+        run: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+
+      - name: Build Caddy
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+        run: |
+          xcaddy build --with github.com/mholt/caddy-l4 --output caddy-${{ matrix.ha_arch }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: caddy-${{ matrix.ha_arch }}
+          path: caddy-${{ matrix.ha_arch }}
+
+  create-release:
+    name: Create Release
+    needs: [get-version, build-binaries]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install yq
+        run: |
+          wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+
+      - name: Update config.yaml
+        run: |
+          VERSION="${{ needs.get-version.outputs.version }}"
+          VERSION="${VERSION#v}"
+          yq -i ".version = \"$VERSION\"" caddy/config.yaml
+          
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add caddy/config.yaml
+          
+          # Commit only if changed
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "chore: bump version to $VERSION [skip ci]"
+            git push origin master
+          fi
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.get-version.outputs.version }}
+          files: dist/*
+          fail_on_unmatched_files: true

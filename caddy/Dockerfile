@@ -9,6 +9,7 @@ RUN apk add --no-cache go git curl tar
 
 COPY bootstrap.sh /
 COPY run.sh /
+COPY config.yaml /
 # We will create a default config.json later
 COPY config.json /etc/caddy/config.json
 
