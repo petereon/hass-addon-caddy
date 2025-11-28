@@ -32,8 +32,6 @@ jobs:
   build-binaries:
     name: Build Binary ${{ matrix.ha_arch }}
     runs-on: ubuntu-latest
-    container:
-        image: ghcr.io/home-assistant/${{ matrix.ha_arch }}-base:3.19
     strategy:
       matrix:
         include:
@@ -74,6 +72,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           GOARM: ${{ matrix.goarm }}
+          CGO_ENABLED: 0
         run: |
           xcaddy build --with github.com/mholt/caddy-l4 --output caddy-${{ matrix.ha_arch }}
 
