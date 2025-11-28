@@ -33,17 +33,15 @@ jobs:
     name: Build Binary ${{ matrix.ha_arch }}
     runs-on: ubuntu-latest
     container:
-        image: ${{ matrix.image }}
+        image: ghcr.io/home-assistant/${{ matrix.ha_arch }}-base:3.19
     strategy:
       matrix:
         include:
           - ha_arch: aarch64
-            image: homeassistant/aarch64-base:3.19
             goos: linux
             goarch: arm64
             goarm: ''
           - ha_arch: amd64
-            image: homeassistant/amd64-base:3.19
             goos: linux
             goarch: amd64
             goarm: ''
@@ -51,17 +49,14 @@ jobs:
             goos: linux
             goarch: arm
             goarm: '6'
-            image: homeassistant/armhf-base:3.19
           - ha_arch: armv7
             goos: linux
             goarch: arm
             goarm: '7'
-            image: homeassistant/armv7-base:3.19
           - ha_arch: i386
             goos: linux
             goarch: 386
             goarm: ''
-            image: homeassistant/i386-base:3.19
     steps:
       - name: Checkout
         uses: actions/checkout@v4
