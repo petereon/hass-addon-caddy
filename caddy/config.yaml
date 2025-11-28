@@ -1,0 +1,24 @@
+name: "Caddy"
+description: "Caddy web server compiled with xcaddy and Layer 4 support"
+version: "1.0.0"
+slug: "caddy"
+host_network: true
+startup: application
+boot: "auto"
+init: false
+map:
+  - "share:rw"
+privileged:
+  - NET_ADMIN
+devices:
+  - /dev/net/tun
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+options:
+  config_path: "/share/caddy.json"
+schema:
+  config_path: str

@@ -1,0 +1,72 @@
+{
+  "admin": {
+    "disabled": true
+  },
+  "apps": {
+    "http": {
+      "servers": {
+        "srv0": {
+          "listen": [
+            ":443"
+          ],
+          "routes": [
+            {
+              "match": [
+                {
+                  "host": [
+                    "example.net"
+                  ]
+                }
+              ],
+              "handle": [
+                {
+                  "handler": "reverse_proxy",
+                  "upstreams": [
+                    {
+                      "dial": "homeassistant:8123"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "layer4": {
+      "servers": {
+        "mqtt": {
+          "listen": [
+            ":8883"
+          ],
+          "routes": [
+            {
+              "match": [
+                {
+                  "tls": {
+                    "sni": [
+                      "example.net"
+                    ]
+                  }
+                }
+              ],
+              "handle": [
+                {
+                  "handler": "tls"
+                },
+                {
+                  "handler": "proxy",
+                  "upstreams": [
+                    {
+                      "dial": "mosquitto:1883"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
