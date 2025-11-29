@@ -37,6 +37,8 @@ if [ -n "$addon_version" ]; then
 	fi
 fi
 
+exit 1
+
 function select_arch() {
 	case $build_arch in
 	"aarch64") echo "arm64" ;;
