@@ -67,7 +67,7 @@ jobs:
       - name: Read xcaddy version
         id: xcaddy-version
         run: |
-          XCADDY_VERSION=$(cat xcaddy-version.txt)
+          XCADDY_VERSION=$(cat caddy/xcaddy-version.txt)
           echo "XCADDY_VERSION=$XCADDY_VERSION" >> $GITHUB_ENV
 
       - name: Install xcaddy
