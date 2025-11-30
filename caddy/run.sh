@@ -19,4 +19,5 @@ caddy list-modules
 
 # Run Caddy
 # We use exec so Caddy takes over PID 1 (or the script process) and receives signals correctly.
-exec caddy run --config "$CONFIG_PATH" --adapter json
+# Caddy auto-detects JSON config format, no need for --adapter flag
+exec caddy run --config "$CONFIG_PATH"
