@@ -1,6 +1,6 @@
 name: "Caddy"
 description: "Caddy web server compiled with xcaddy and Layer 4 support"
-version: "0.0.2"
+version: "0.0.3"
 slug: "caddy"
 host_network: true
 startup: application
